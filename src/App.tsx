@@ -1,24 +1,56 @@
-import React from 'react';
-import logo from './logo.svg';
+import { useReducer } from 'react';
+
+import { validateInput }  from './api';
+import reducer, { ActionType, PIN_LENGTH } from './pinInput.reducer';
+import PinInputGrid from './PinInputGrid';
 import './App.css';
 
+
 function App() {
+
+  const [{pin, validationData}, dispatch] = useReducer(reducer, {
+    pin: new Array(PIN_LENGTH),
+    validationData: {}
+  })
+
+  const onPinChanged = (pinEntry: number | undefined, index: number) => {
+    const newPin = [...pin];
+    newPin[index] = pinEntry;
+    dispatch({ type: ActionType.SET_PIN, pin: newPin })
+  };
+
+  const validatePin = async () => {
+    try {
+      const message = await validateInput(pin.join(''));
+      dispatch({ 
+        type: ActionType.SET_VALIDATION_DATA, 
+        validationData: { message, result: true }
+      })
+    } catch (e: any) {
+      dispatch({ 
+        type: ActionType.SET_VALIDATION_DATA, validationData: {
+          message: e,
+          result: false
+        }
+      })
+    }
+  };
+
   return (
     <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+      <PinInputGrid 
+        onPinChanged={onPinChanged} 
+        pin={pin}
+        pinLength={PIN_LENGTH}
+        validationMessage={validationData.message}
+        validationResult={validationData.result}
+      />
+      <button onClick={validatePin}>validate</button>
+      <button onClick={() => dispatch({ 
+        type: ActionType.RESET
+      })}>
+        clear
+      </button>
     </div>
   );
 }
